@@ -30,7 +30,7 @@ const PhotoUpload = ({ currentUrl, onChange }) => {
           onChange={handleFileChange}
         />
       </label>
-      <p className="text-xs text-gray-400">JPG, PNG or WEBP — max 3MB</p>
+      <p className="text-xs text-gray-400">JPG, PNG or WEBP</p>
     </div>
   );
 };
