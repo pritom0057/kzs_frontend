@@ -14,10 +14,14 @@ export const AuthProvider = ({ children }) => {
       .finally(() => setLoading(false));
   }, []);
 
-  const login = (userData) => setUser(userData);
+  const login = (userData) => {
+    if (userData.token) localStorage.setItem('kzs_token', userData.token);
+    setUser(userData);
+  };
 
   const logout = async () => {
     await axiosInstance.post('/auth/logout');
+    localStorage.removeItem('kzs_token');
     setUser(null);
   };
 
