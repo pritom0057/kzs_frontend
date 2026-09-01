@@ -9,6 +9,20 @@ import Alert from '../components/ui/Alert';
 const SHIFTS   = ['Morning', 'Day'];
 const SECTIONS = ['A', 'B'];
 
+const compressImage = (file, maxPx = 900, quality = 0.82) =>
+  new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, maxPx / Math.max(img.width, img.height));
+      const canvas = document.createElement('canvas');
+      canvas.width  = Math.round(img.width  * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob((blob) => resolve(new File([blob], file.name, { type: 'image/jpeg' })), 'image/jpeg', quality);
+    };
+    img.src = URL.createObjectURL(file);
+  });
+
 const emptyChild = () => ({ name: '', age: '' });
 
 const ProfilePage = () => {
@@ -89,13 +103,14 @@ const ProfilePage = () => {
       let photoUrl = currentPhotoUrl;
 
       if (photo) {
+        const compressed = await compressImage(photo);
         const { data: urlData } = await axiosInstance.get('/profile/upload-url', {
-          params: { filename: photo.name, contentType: photo.type },
+          params: { filename: compressed.name, contentType: compressed.type },
         });
         const s3Res = await fetch(urlData.data.uploadUrl, {
           method: 'PUT',
-          headers: { 'Content-Type': photo.type },
-          body: photo,
+          headers: { 'Content-Type': compressed.type },
+          body: compressed,
         });
         if (!s3Res.ok) throw new Error(`Photo upload failed: ${s3Res.status}`);
         photoUrl = urlData.data.fileUrl;
