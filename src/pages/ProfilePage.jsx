@@ -85,19 +85,32 @@ const ProfilePage = () => {
     setLoading(true);
     setAlert({ type: '', message: '' });
 
-    const formData = new FormData();
-    formData.append('mobileNumber', user.mobileNumber);
-    Object.entries(form).forEach(([key, val]) => formData.append(key, val));
-    formData.append('children', JSON.stringify(
-      children.map((c) => ({ name: c.name.trim(), age: parseInt(c.age) }))
-    ));
-    if (photo) formData.append('photo', photo);
-
     try {
+      let photoUrl = currentPhotoUrl;
+
+      if (photo) {
+        const { data: urlData } = await axiosInstance.get('/profile/upload-url', {
+          params: { filename: photo.name, contentType: photo.type },
+        });
+        await fetch(urlData.data.uploadUrl, {
+          method: 'PUT',
+          headers: { 'Content-Type': photo.type },
+          body: photo,
+        });
+        photoUrl = urlData.data.fileUrl;
+      }
+
+      const payload = {
+        ...form,
+        mobileNumber: user.mobileNumber,
+        children: children.map((c) => ({ name: c.name.trim(), age: parseInt(c.age) })),
+        photoUrl,
+      };
+
       const method = isEdit ? 'put' : 'post';
-      await axiosInstance[method]('/profile', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      await axiosInstance[method]('/profile', payload);
+      setCurrentPhotoUrl(photoUrl);
+      setPhoto(null);
       setIsEdit(true);
       setAlert({ type: 'success', message: 'Profile saved successfully!' });
     } catch (err) {
