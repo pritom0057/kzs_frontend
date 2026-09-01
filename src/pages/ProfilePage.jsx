@@ -92,11 +92,12 @@ const ProfilePage = () => {
         const { data: urlData } = await axiosInstance.get('/profile/upload-url', {
           params: { filename: photo.name, contentType: photo.type },
         });
-        await fetch(urlData.data.uploadUrl, {
+        const s3Res = await fetch(urlData.data.uploadUrl, {
           method: 'PUT',
           headers: { 'Content-Type': photo.type },
           body: photo,
         });
+        if (!s3Res.ok) throw new Error(`Photo upload failed: ${s3Res.status}`);
         photoUrl = urlData.data.fileUrl;
       }
 
@@ -114,7 +115,7 @@ const ProfilePage = () => {
       setIsEdit(true);
       setAlert({ type: 'success', message: 'Profile saved successfully!' });
     } catch (err) {
-      setAlert({ type: 'error', message: err.response?.data?.message || 'Failed to save profile.' });
+      setAlert({ type: 'error', message: err.response?.data?.message || err.message || 'Failed to save profile.' });
     } finally {
       setLoading(false);
     }
